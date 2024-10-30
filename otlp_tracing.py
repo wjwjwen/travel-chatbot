@@ -18,6 +18,18 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
+def simple_looger():
+    # Configure logging
+    logging.basicConfig(level=logging.DEBUG)
+
+    # Suppress INFO logs from 'azure.core.pipeline.policies.http_logging_policy'
+    logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+        logging.WARNING
+    )
+    logging.getLogger("azure.identity.aio._internal").setLevel(logging.WARNING)
+    return logging
+
+
 def configure_logger():
     logger = logging.getLogger("travel_chatbot")
     logger.setLevel(logging.INFO)
@@ -35,6 +47,7 @@ def configure_logger():
 
 
 logger = configure_logger()
+# logger = simple_looger()
 
 
 def configure_oltp_tracing(
@@ -67,10 +80,10 @@ def configure_oltp_tracing(
     # Attach OTLP handler to root logger
     logging.getLogger().addHandler(handler)
 
-    # Suppress INFO logs from 'azure.core.pipeline.policies.http_logging_policy'
-    logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
-        logging.WARNING
-    )
-    logging.getLogger("azure.identity.aio._internal").setLevel(logging.WARNING)
+    # # Suppress INFO logs from 'azure.core.pipeline.policies.http_logging_policy'
+    # logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+    #     logging.WARNING
+    # )
+    # logging.getLogger("azure.identity.aio._internal").setLevel(logging.WARNING)
 
     return tracer_provider

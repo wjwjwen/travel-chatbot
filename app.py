@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from typing import Optional, Dict
+from typing import Dict
 
 from autogen_core.base import MessageContext
 from autogen_core.components import (
@@ -9,12 +9,11 @@ from autogen_core.components import (
     default_subscription,
     message_handler,
 )
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, WebSocketException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.websockets import WebSocketState  # Import WebSocketState
 
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
-from data_types import AgentResponse, UserMessage
+from data_types import AgentResponse, EndUserMessage
 from otlp_tracing import logger
 from utils import initialize_agent_runtime
 
@@ -47,7 +46,7 @@ class WebSocketConnectionManager:
             while True:
                 user_message_text = await websocket.receive_text()
                 chat_id = str(uuid.uuid4())
-                user_message = UserMessage(content=user_message_text, source="User")
+                user_message = EndUserMessage(content=user_message_text, source="User")
 
                 logger.info(f"Received message with chat_id: {chat_id}")
 
@@ -78,7 +77,7 @@ class DefaultAgent(RoutedAgent):
 
     @message_handler
     async def handle_unknown_intent(
-        self, message: UserMessage, ctx: MessageContext
+        self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
         logger.info(f"DefaultAgent received message: {message.content}")
         content = "I'm sorry, I couldn't understand your request. Could you please provide more details?"
@@ -109,12 +108,12 @@ class UserProxyAgent(RoutedAgent):
 
     @message_handler
     async def handle_user_message(
-        self, message: UserMessage, ctx: MessageContext
+        self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
         logger.info(f"UserProxyAgent received user message: {message.content}")
         # Forward the message to the router
         await self.publish_message(
-            UserMessage(content=message.content, source=message.source),
+            EndUserMessage(content=message.content, source=message.source),
             DefaultTopicId(type="router", source=ctx.topic_id.source),
         )
 
