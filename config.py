@@ -1,7 +1,7 @@
 # config.py
 import os
 
-from autogen_core.components.models import AzureOpenAIChatCompletionClient
+from autogen_ext.models import AzureOpenAIChatCompletionClient
 from azure.cosmos.aio import CosmosClient
 from azure.identity.aio import (ClientSecretCredential, DefaultAzureCredential,
                                 get_bearer_token_provider)
@@ -48,6 +48,9 @@ class Config:
     AZURE_OPENAI_API_VERSION = GetRequiredConfig("AZURE_OPENAI_API_VERSION")
     AZURE_OPENAI_ENDPOINT = GetRequiredConfig("AZURE_OPENAI_ENDPOINT")
     AZURE_OPENAI_API_KEY = GetOptionalConfig("AZURE_OPENAI_API_KEY")
+
+    BING_CUSTOM_CONFIG_ID = GetRequiredConfig("BING_CUSTOM_CONFIG_ID")
+    BING_CUSTOM_SEARCH_KEY = GetRequiredConfig("BING_CUSTOM_SEARCH_KEY")
 
     DEV_BYPASS_AUTH = GetBoolConfig("DEV_BYPASS_AUTH")
     VISITOR_PASSWORD = GetOrGenerateVisitorPassword()

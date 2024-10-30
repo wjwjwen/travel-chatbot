@@ -2,7 +2,7 @@ from autogen_core.base import MessageContext
 from autogen_core.components import (DefaultTopicId, RoutedAgent,
                                      default_subscription, message_handler)
 
-from data_types import HandoffMessage, UserMessage
+from data_types import EndUserMessage, HandoffMessage
 from intent import IntentClassifier
 from otlp_tracing import logger
 from registry import AgentRegistry
@@ -23,7 +23,7 @@ class SemanticRouterAgent(RoutedAgent):
         self._classifier = intent_classifier
 
     @message_handler
-    async def route_message(self, message: UserMessage, ctx: MessageContext) -> None:
+    async def route_message(self, message: EndUserMessage, ctx: MessageContext) -> None:
         session_id = ctx.topic_id.source
         intent = await self._classifier.classify_intent(message.content)
         agent_type = await self._registry.get_agent(intent)
@@ -33,7 +33,7 @@ class SemanticRouterAgent(RoutedAgent):
             agent_type = "default_agent"
             logger.info("Unknown intent, routing to DefaultAgent")
         await self.publish_message(
-            UserMessage(content=message.content, source=message.source),
+            EndUserMessage(content=message.content, source=message.source),
             DefaultTopicId(type=agent_type, source=session_id),
         )
 
@@ -45,5 +45,5 @@ class SemanticRouterAgent(RoutedAgent):
             f"SemanticRouterAgent received handoff message from {message.source}"
         )
         await self.route_message(
-            UserMessage(content=message.content, source=message.source), ctx
+            EndUserMessage(content=message.content, source=message.source), ctx
         )

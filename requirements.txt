@@ -1,5 +1,5 @@
-autogen-core==0.4.0dev1
-autogen-ext==0.4.0dev1
+autogen-core==0.4.0dev2
+autogen-ext==0.4.0dev2
 fastapi
 uvicorn
 python-dotenv
@@ -19,3 +19,5 @@ opentelemetry-instrumentation-openai
 opentelemetry-exporter-otlp-proto-http
 opentelemetry-exporter-otlp-proto-grpc
 nats-py
+tenacity
+beautifulsoup4

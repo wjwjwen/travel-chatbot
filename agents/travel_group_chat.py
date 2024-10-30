@@ -4,8 +4,8 @@ from autogen_core.base import MessageContext
 from autogen_core.components import (DefaultTopicId, RoutedAgent,
                                      default_subscription, message_handler)
 
-from data_types import (AgentResponse, GroupChatMessage, TravelRequest,
-                        UserMessage)
+from data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
+                        TravelRequest)
 from otlp_tracing import logger
 
 
@@ -22,7 +22,7 @@ class GroupChatManager(RoutedAgent):
 
     @message_handler
     async def handle_travel_request(
-        self, message: UserMessage, ctx: MessageContext
+        self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
         logger.info(f"GroupChatManager received travel request: {message.content}")
         self._session_id = ctx.topic_id.source

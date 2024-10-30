@@ -10,7 +10,7 @@ from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.memory.types import BaseMemory
 from pydantic import BaseModel
 
-from data_types import AgentResponse, UserMessage
+from data_types import AgentResponse, EndUserMessage
 from otlp_tracing import logger
 
 
@@ -23,25 +23,6 @@ class Resource(BaseModel):
 class Message(BaseModel):
     content: str
     sources: Optional[List[Resource]] = None
-
-
-# llm = AzureOpenAI(
-#     deployment_name=Config.AZURE_OPENAI_DEPLOYMENT_NAME,
-#     temperature=0.0,
-#     # azure_ad_token_provider=get_bearer_token_provider(DefaultAzureCredential()),
-#     api_key=Config.AZURE_OPENAI_API_KEY,
-#     azure_endpoint=Config.AZURE_OPENAI_ENDPOINT,
-#     api_version=Config.AZURE_OPENAI_API_VERSION,
-# )
-
-# embed_model = AzureOpenAIEmbedding(
-#     deployment_name=os.getenv("AZURE_OPENAI_EMBEDDING_MODEL"),
-#     temperature=0.0,
-#     azure_ad_token_provider=get_bearer_token_provider(DefaultAzureCredential()),
-#     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-#     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-# )
 
 
 @default_subscription
@@ -59,7 +40,7 @@ class LlamaIndexAgent(RoutedAgent):
 
     @message_handler
     async def handle_user_message(
-        self, message: UserMessage, ctx: MessageContext
+        self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
         # retriever history messages from memory!
         logger.info("Handling user message in LlamaIndexAgent")
@@ -104,13 +85,11 @@ class LlamaIndexAgent(RoutedAgent):
             ]
 
             resources.extend(tools)
-            # test = response.response
             logger.info(response.response)
-            # return Message(content=response.response, sources=resources)
             await self.publish_message(
                 AgentResponse(
                     source="LlamaIndexAgent",
-                    content=f"Here is info from Wikipedia:\n{response.response}",
+                    content=f"\n{response.response}\n",
                 ),
                 DefaultTopicId(type="user_proxy", source=self._session_id),
             )

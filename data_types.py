@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import List
+
+from pydantic import BaseModel
 
 
 # Message Protocol Definitions
@@ -8,7 +11,7 @@ class BaseMessage:
 
 
 @dataclass
-class UserMessage(BaseMessage):
+class EndUserMessage(BaseMessage):
     content: str
 
 
@@ -36,3 +39,14 @@ class TravelRequest(BaseMessage):
 @dataclass
 class HandoffMessage(BaseMessage):
     content: str
+
+
+class ActivitiesDetail(BaseModel):
+    activity_name: str
+    activity_type: str
+    activity_description: str
+
+
+class Activities(BaseModel):
+    destination_city: str
+    activities: List[ActivitiesDetail]

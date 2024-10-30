@@ -3,8 +3,8 @@ from autogen_core.components import (DefaultTopicId, RoutedAgent,
                                      default_subscription, message_handler,
                                      type_subscription)
 
-from data_types import (AgentResponse, GroupChatMessage, HandoffMessage,
-                        TravelRequest, UserMessage)
+from data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
+                        HandoffMessage, TravelRequest)
 from otlp_tracing import logger
 
 
@@ -16,7 +16,9 @@ class CarRentalAgent(RoutedAgent):
         super().__init__("CarRentalAgent")
 
     @message_handler
-    async def handle_message(self, message: UserMessage, ctx: MessageContext) -> None:
+    async def handle_message(
+        self, message: EndUserMessage, ctx: MessageContext
+    ) -> None:
         logger.info(f"CarRentalAgent received message: {message.content}")
         if "travel plan" in message.content.lower():
             # Cannot handle complex travel plans, hand off back to router
