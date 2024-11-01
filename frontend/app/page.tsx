@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, MapPin } from "lucide-react";
+import { Send, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,10 +25,13 @@ export default function Component() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const socket = new WebSocket("wss://echo.websocket.org");
+    const WEBSOCKET_URL =
+      process.env.NEXT_PUBLIC_WEBSOCKET_URL || "wss://echo.websocket.org";
+    const socket = new WebSocket(WEBSOCKET_URL);
     setWs(socket);
 
     socket.onopen = () => {
@@ -49,6 +52,7 @@ export default function Component() {
         sender: "bot",
       };
       setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setIsLoading(false);
     };
 
     return () => {
@@ -60,7 +64,7 @@ export default function Component() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const sendMessage = (message: string) => {
     if (message.trim() && ws) {
@@ -72,6 +76,53 @@ export default function Component() {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
       ws.send(message);
       setInputMessage("");
+      setIsLoading(true);
+    }
+  };
+
+  const formatValue = (value: any): React.ReactNode => {
+    if (Array.isArray(value)) {
+      return (
+        <div className="ml-4">
+          {value.map((item, index) => (
+            <div key={index} className="mt-2">
+              {typeof item === "object" ? (
+                formatJsonResponse(item)
+              ) : (
+                <span>{item}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (typeof value === "object" && value !== null) {
+      return formatJsonResponse(value);
+    }
+
+    return <span>{String(value)}</span>;
+  };
+
+  const formatJsonResponse = (content: any) => {
+    try {
+      const jsonData =
+        typeof content === "string" ? JSON.parse(content) : content;
+
+      return (
+        <div className="space-y-3">
+          {Object.entries(jsonData).map(([key, value]) => (
+            <div key={key} className="text-sm">
+              <span className="font-semibold capitalize">
+                {key.replace(/_/g, " ")}:
+              </span>{" "}
+              {formatValue(value)}
+            </div>
+          ))}
+        </div>
+      );
+    } catch (error) {
+      return <span>{content}</span>;
     }
   };
 
@@ -101,10 +152,20 @@ export default function Component() {
                       : "bg-gray-100 text-gray-900"
                   }`}
                 >
-                  {message.content}
+                  {message.sender === "bot" && message.content.startsWith("{")
+                    ? formatJsonResponse(message.content)
+                    : message.content}
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Thinking...</span>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
@@ -122,6 +183,7 @@ export default function Component() {
                     size="sm"
                     onClick={() => sendMessage(question)}
                     className="text-sm bg-white"
+                    disabled={isLoading}
                   >
                     <MapPin className="w-4 h-4 mr-2" />
                     {question}
@@ -142,13 +204,21 @@ export default function Component() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 className="flex-grow bg-white"
+                disabled={isLoading}
               />
               <Button
                 type="submit"
                 className="bg-black text-white hover:bg-gray-800 px-6"
+                disabled={isLoading}
               >
-                <Send className="h-4 w-4 mr-2" />
-                Send
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send
+                  </>
+                )}
               </Button>
             </form>
           </div>
