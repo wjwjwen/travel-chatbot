@@ -1,24 +1,39 @@
 import asyncio
 import uuid
+from contextlib import asynccontextmanager
 from typing import Dict
 
 from autogen_core.base import MessageContext
-from autogen_core.components import (
-    DefaultTopicId,
-    RoutedAgent,
-    default_subscription,
-    message_handler,
-)
+from autogen_core.components import (DefaultTopicId, RoutedAgent,
+                                     default_subscription, message_handler)
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.websockets import WebSocketState  # Import WebSocketState
 
-from data_types import AgentResponse, EndUserMessage
-from otlp_tracing import logger
-from utils import initialize_agent_runtime
+from .data_types import AgentResponse, EndUserMessage
+from .otlp_tracing import logger
+from .utils import initialize_agent_runtime
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global agent_runtime
+    global user_proxy_agent_instance
+    agent_runtime = await initialize_agent_runtime()
+
+    # Register the UserProxyAgent instance with the AgentRuntime
+    await UserProxyAgent.register(agent_runtime, "user_proxy", lambda: UserProxyAgent())
+
+    yield  # This separates the startup and shutdown logic
+
+    # Cleanup logic (if any) goes here
+    # For example, you might want to close connections or release resources
+    agent_runtime = None
+    user_proxy_agent_instance = None
+
 
 # Define FastAPI app
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # Instrument FastAPI app for tracing
 FastAPIInstrumentor.instrument_app(app)
@@ -122,21 +137,16 @@ class UserProxyAgent(RoutedAgent):
 connection_manager = WebSocketConnectionManager()
 
 
-@app.on_event("startup")
-async def startup_event():
-    global agent_runtime
-    global user_proxy_agent_instance
-    agent_runtime = await initialize_agent_runtime()
-
-    # Register the UserProxyAgent instance with the AgentRuntime
-    await UserProxyAgent.register(agent_runtime, "user_proxy", lambda: UserProxyAgent())
-
-
 # WebSocket endpoint to handle user messages
 @app.websocket("/chat")
 async def websocket_endpoint(websocket: WebSocket):
     session_id = str(uuid.uuid4())
     await connection_manager.handle_websocket(websocket, session_id)
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 
 # Run the FastAPI app
