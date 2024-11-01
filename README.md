@@ -215,4 +215,8 @@ This project uses OpenTelemetry for tracing and logging. Traces are sent to loca
 This project uses OpenTelemetry for tracing and logging. Traces are sent to a local Aspire backend. Follow the instructions at this [link](https://microsoft.github.io/autogen/0.4.0.dev2/user-guide/core-user-guide/cookbook/instrumenting.html) on how to use OpenTelemetry with Autogen.
 
 ![Sample Trace](./images/sample_trace.png)
-![./images/sample_trace.png]
+
+## Frontend
+
+A simple frontend is provided in the `frontend` directory. It uses NextJs and WebSocket to communicate with the backend.
+![Webchat Interface](./images/sample_frontend.png)
