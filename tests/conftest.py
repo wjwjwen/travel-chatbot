@@ -1,6 +1,6 @@
-import pytest
 import asyncio
-import trio
+
+import pytest
 from websockets import serve
 
 
@@ -15,8 +15,12 @@ def start_websocket_server():
 
     server = loop.run_until_complete(serve(websocket_handler, "127.0.0.1", 8000))
     yield
-    server.close()
+    loop.run_until_complete(server.close())
     loop.run_until_complete(server.wait_closed())
+    loop.run_until_complete(asyncio.sleep(0))  # Ensure all tasks are completed
+    loop.run_until_complete(
+        asyncio.gather(*asyncio.all_tasks(loop))
+    )  # Ensure all tasks are completed
     loop.close()
 
 
@@ -25,8 +29,3 @@ def asyncio_event_loop():
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
-
-
-@pytest.fixture
-def trio_event_loop():
-    yield trio.open_memory_channel(0)

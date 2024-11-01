@@ -8,7 +8,7 @@ from autogen_core.components import (DefaultTopicId, RoutedAgent,
                                      default_subscription, message_handler)
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from starlette.websockets import WebSocketState  # Import WebSocketState
+from starlette.websockets import WebSocketState
 
 from .data_types import AgentResponse, EndUserMessage
 from .otlp_tracing import logger
@@ -17,6 +17,11 @@ from .utils import initialize_agent_runtime
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Handles the startup and shutdown lifespan events for the FastAPI application.
+
+    Initializes the agent runtime and registers the UserProxyAgent.
+    """
     global agent_runtime
     global user_proxy_agent_instance
     agent_runtime = await initialize_agent_runtime()
@@ -26,8 +31,7 @@ async def lifespan(app: FastAPI):
 
     yield  # This separates the startup and shutdown logic
 
-    # Cleanup logic (if any) goes here
-    # For example, you might want to close connections or release resources
+    # Cleanup logic goes here
     agent_runtime = None
     user_proxy_agent_instance = None
 
@@ -44,17 +48,41 @@ user_proxy_agent_instance = None  # Global variable to store the UserProxyAgent 
 
 
 class WebSocketConnectionManager:
+    """
+    Manages WebSocket connections for user sessions.
+    """
+
     def __init__(self):
         self.connections: Dict[str, WebSocket] = {}
 
     def add_connection(self, session_id: str, websocket: WebSocket) -> None:
+        """
+        Adds a new WebSocket connection to the manager.
+
+        Args:
+            session_id (str): The unique identifier for the session.
+            websocket (WebSocket): The WebSocket connection.
+        """
         self.connections[session_id] = websocket
 
     def remove_connection(self, session_id: str) -> None:
+        """
+        Removes a WebSocket connection from the manager.
+
+        Args:
+            session_id (str): The unique identifier for the session.
+        """
         if session_id in self.connections:
             del self.connections[session_id]
 
     async def handle_websocket(self, websocket: WebSocket, session_id: str):
+        """
+        Handles incoming WebSocket messages and manages connection lifecycle.
+
+        Args:
+            websocket (WebSocket): The WebSocket connection.
+            session_id (str): The unique identifier for the session.
+        """
         await websocket.accept()
         self.add_connection(session_id, websocket)
         try:
@@ -87,6 +115,10 @@ class WebSocketConnectionManager:
 # Default Agent
 @default_subscription
 class DefaultAgent(RoutedAgent):
+    """
+    Handles messages that do not match any specific intent.
+    """
+
     def __init__(self) -> None:
         super().__init__("DefaultAgent")
 
@@ -94,6 +126,13 @@ class DefaultAgent(RoutedAgent):
     async def handle_unknown_intent(
         self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
+        """
+        Handles messages with unknown intent by providing a default response.
+
+        Args:
+            message (EndUserMessage): The user's message.
+            ctx (MessageContext): The message context.
+        """
         logger.info(f"DefaultAgent received message: {message.content}")
         content = "I'm sorry, I couldn't understand your request. Could you please provide more details?"
         await self.publish_message(
@@ -105,6 +144,10 @@ class DefaultAgent(RoutedAgent):
 # User Proxy Agent
 @default_subscription
 class UserProxyAgent(RoutedAgent):
+    """
+    Acts as a proxy between the user and the routing agent.
+    """
+
     def __init__(self) -> None:
         super().__init__("UserProxyAgent")
 
@@ -112,6 +155,13 @@ class UserProxyAgent(RoutedAgent):
     async def handle_agent_response(
         self, message: AgentResponse, ctx: MessageContext
     ) -> None:
+        """
+        Sends the agent's response back to the user via WebSocket.
+
+        Args:
+            message (AgentResponse): The agent's response message.
+            ctx (MessageContext): The message context.
+        """
         logger.info(f"UserProxyAgent received agent response: {message.content}")
         session_id = ctx.topic_id.source
         try:
@@ -125,6 +175,13 @@ class UserProxyAgent(RoutedAgent):
     async def handle_user_message(
         self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
+        """
+        Forwards the user's message to the router for further processing.
+
+        Args:
+            message (EndUserMessage): The user's message.
+            ctx (MessageContext): The message context.
+        """
         logger.info(f"UserProxyAgent received user message: {message.content}")
         # Forward the message to the router
         await self.publish_message(
@@ -140,12 +197,21 @@ connection_manager = WebSocketConnectionManager()
 # WebSocket endpoint to handle user messages
 @app.websocket("/chat")
 async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for handling user chat messages.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection.
+    """
     session_id = str(uuid.uuid4())
     await connection_manager.handle_websocket(websocket, session_id)
 
 
 @app.get("/health")
 async def health_check():
+    """
+    Health check endpoint to verify that the service is running.
+    """
     return {"status": "ok"}
 
 
@@ -153,4 +219,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("backend.app:app", host="127.0.0.1", port=8000, reload=True)

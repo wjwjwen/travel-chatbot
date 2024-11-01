@@ -12,7 +12,8 @@ from autogen_core.components.tools import FunctionTool, Tool
 from autogen_ext.models import AzureOpenAIChatCompletionClient
 from typing_extensions import Annotated
 
-from ..data_types import (AgentResponse, EndUserMessage, HandoffMessage, TravelRequest)
+from ..data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
+                          HandoffMessage, TravelRequest)
 from ..otlp_tracing import logger
 
 
@@ -153,16 +154,14 @@ class HotelAgent(RoutedAgent):
     @message_handler
     async def handle_travel_request(
         self, message: TravelRequest, ctx: MessageContext
-    ) -> None:
+    ) -> GroupChatMessage:
         logger.info(
             f"HotelAgent received travel request - TravelRequest: {message.content}"
         )
         response_content = await self._process_request(message.content, ctx)
+        logger.info(f"HotelAgent response: {response_content}")
 
-        await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content=f"Hotel booked: {response_content}",
-            ),
-            DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
+        return GroupChatMessage(
+            source=self.id.type,
+            content=f"Hotel booked: {response_content}",
         )

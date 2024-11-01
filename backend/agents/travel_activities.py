@@ -17,7 +17,7 @@ from typing_extensions import Annotated
 
 from ..config import Config
 from ..data_types import (Activities, AgentResponse, EndUserMessage,
-                          HandoffMessage, TravelRequest)
+                          GroupChatMessage, HandoffMessage, TravelRequest)
 from ..otlp_tracing import logger
 
 
@@ -172,14 +172,11 @@ class ActivitiesAgent(RoutedAgent):
     @message_handler
     async def handle_travel_request(
         self, message: TravelRequest, ctx: MessageContext
-    ) -> None:
+    ) -> GroupChatMessage:
         activities_structured = await self._process_request(message.content, ctx)
 
-        # Publish the response to the group chat manager
-        await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content=activities_structured.model_dump_json(),
-            ),
-            DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
+        # send the response to the group chat manager
+        return GroupChatMessage(
+            source=self.id.type,
+            content=activities_structured.model_dump_json(),
         )

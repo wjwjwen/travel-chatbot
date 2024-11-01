@@ -16,6 +16,17 @@ from ..session_state import SessionStateManager
 
 @type_subscription(topic_type="router")
 class SemanticRouterAgent(RoutedAgent):
+    """
+    The SemanticRouterAgent routes incoming messages to appropriate agents based on the intent.
+
+    Attributes:
+        name (str): Name of the agent.
+        model_client (AzureOpenAIChatCompletionClient): The model client for agent routing.
+        agent_registry (AgentRegistry): The registry containing agent information.
+        intent_classifier (IntentClassifier): Classifier to determine intent from user messages.
+        session_manager (SessionStateManager): Manages the session state for each user.
+    """
+
     def __init__(
         self,
         name: str,
@@ -33,6 +44,13 @@ class SemanticRouterAgent(RoutedAgent):
 
     @message_handler
     async def route_message(self, message: EndUserMessage, ctx: MessageContext) -> None:
+        """
+        Routes user messages to appropriate agents based on conversation context.
+
+        Args:
+            message (EndUserMessage): The incoming user message.
+            ctx (MessageContext): Context information for the message.
+        """
         session_id = ctx.topic_id.source
 
         # Add the current message to session history
@@ -71,6 +89,13 @@ class SemanticRouterAgent(RoutedAgent):
     async def handle_handoff(
         self, message: HandoffMessage, ctx: MessageContext
     ) -> None:
+        """
+        Handles handoff messages from other agents.
+
+        Args:
+            message (HandoffMessage): The handoff message from another agent.
+            ctx (MessageContext): Context information for the message.
+        """
         session_id = ctx.topic_id.source
         logger.info(f"Received handoff message from {message.source}")
 
@@ -85,6 +110,16 @@ class SemanticRouterAgent(RoutedAgent):
     async def _get_agents_to_route(
         self, message: EndUserMessage, history: deque
     ) -> TravelPlan:
+        """
+        Determines the appropriate agents to route the message to based on context.
+
+        Args:
+            message (EndUserMessage): The incoming user message.
+            history (deque): The history of messages in the session.
+
+        Returns:
+            TravelPlan: A travel plan indicating which agents should handle the subtasks.
+        """
         # System prompt to determine the appropriate agents to handle the message
         system_message = f"""
         You are an orchestration agent.
@@ -102,9 +137,9 @@ class SemanticRouterAgent(RoutedAgent):
         The current user message: {message.content}
         Conversation history so far: {[msg.content for msg in history]}
 
-        Note: You should try and address the current user message. coversation history is provided for context.
+        Note: You should try and address the current user message. conversation history is provided for context.
 
-        Output one or more of the agent identifiers and the sub task with details they need to act up on. Include information regarding the travel plan in the sub tasks.Do not provide any other information.
+        Output one or more of the agent identifiers and the sub task with details they need to act upon. Include information regarding the travel plan in the sub tasks. Do not provide any other information.
         """
         try:
             response = await self._model_client.create(

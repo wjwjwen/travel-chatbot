@@ -1,5 +1,14 @@
-{"question": "What are the top tourist attractions in Paris?"}
-{"question": "How can I find cheap flights to Tokyo?"}
-{"question": "What is the best time of year to visit Australia?"}
-{"question": "Do I need a visa to travel to Canada?"}
-{"question": "What are some tips for traveling on a budget?"}
+{"question": "Book me a flight to New York and rent a car there from January 10th to January 15th.", "expected_agent": "group_chat_manager", "description": "This question involves both flight booking and car rental, so it should be handled by the GroupChatManager."}
+{"question": "Can you book a hotel in London and suggest some tours I could do?", "expected_agent": "group_chat_manager", "description": "This request involves both hotel booking and activities, requiring the GroupChatManager to handle multiple intents."}
+{"question": "I need a flight from New York to Paris on December 20th.", "expected_agent": "flight_booking", "description": "This should test if the FlightAgent is invoked when booking flights is the main task."}
+{"question": "Can you help me find a nice hotel in Paris for my stay?", "expected_agent": "hotel_booking", "description": "This should verify that the HotelAgent is used when the user asks for hotel booking information."}
+{"question": "What are some activities I can do in Paris?", "expected_agent": "activities_booking", "description": "This should route the message to the ActivitiesAgent to get information about available activities."}
+{"question": "I want to rent a car in New York from December 21 to December 26.", "expected_agent": "car_rental", "description": "This question should trigger the CarRentalAgent to handle the car rental request."}
+{"question": "Can you give me some information about Rome?", "expected_agent": "destination_info", "description": "The message should be routed to the DestinationAgent to provide details about Rome."}
+{"question": "I need a full travel plan for a vacation in Italy, including flights, hotels, and car rental.", "expected_agent": "group_chat_manager", "description": "This complex travel request should be routed to the GroupChatManager for coordination between multiple agents."}
+{"question": "Book a hotel and a flight for my trip to Tokyo.", "expected_agent": "group_chat_manager", "description": "A mixed request that involves both a flight and hotel booking should trigger the GroupChatManager."}
+{"question": "Can you provide some sightseeing options for London and book me a hotel?", "expected_agent": "group_chat_manager", "description": "This question should route to the GroupChatManager since it involves multiple tasks (activities and hotel booking)."}
+{"question": "I'm not sure where to go for my vacation, can you help me decide?", "expected_agent": "default_agent", "description": "This is a generic query and should be handled by the DefaultAgent when no clear intent can be identified."}
+{"question": "I need a flight to an unknown destination.", "expected_agent": "default_agent", "description": "A vague request without sufficient details should route to the DefaultAgent for further clarification."}
+
+

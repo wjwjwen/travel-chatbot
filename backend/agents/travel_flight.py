@@ -6,8 +6,8 @@ from autogen_core.components import (DefaultTopicId, RoutedAgent,
                                      message_handler, type_subscription)
 from typing_extensions import Annotated
 
-from ..data_types import (AgentResponse, EndUserMessage, HandoffMessage,
-                          TravelRequest)
+from ..data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
+                          HandoffMessage, TravelRequest)
 from ..otlp_tracing import logger
 
 
@@ -138,15 +138,12 @@ class FlightAgent(RoutedAgent):
     @message_handler
     async def handle_travel_request(
         self, message: TravelRequest, ctx: MessageContext
-    ) -> None:
+    ) -> GroupChatMessage:
         logger.info(f"FlightAgent received travel request sub-task: {message.content}")
-        # Process flight booking
-        await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content="Flight booking processed as requested and confirmation will be sent by email",
-            ),
-            DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
+
+        return GroupChatMessage(
+            source=self.id.type,
+            content="Flight booking processed as requested and confirmation will be sent by email",
         )
 
     async def process_request(self, requirements: dict) -> dict:
