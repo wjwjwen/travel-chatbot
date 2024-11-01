@@ -8,7 +8,8 @@ from autogen_core.components import (DefaultTopicId, RoutedAgent,
 from autogen_core.components.models import LLMMessage, SystemMessage
 from typing_extensions import Annotated
 
-from ..data_types import (AgentResponse, EndUserMessage, HandoffMessage, TravelRequest)
+from ..data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
+                          HandoffMessage, TravelRequest)
 from ..otlp_tracing import logger
 
 
@@ -140,18 +141,15 @@ class CarRentalAgent(RoutedAgent):
     @message_handler
     async def handle_travel_request(
         self, message: TravelRequest, ctx: MessageContext
-    ) -> None:
+    ) -> GroupChatMessage:
         logger.info(
             f"CarRentalAgent received travel request: TravelRequest - {message.content}"
         )
         requirements = self.extract_requirements(message.content)
         response = await self._process_request(requirements)
-        await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content=f"Car rented: {response}",
-            ),
-            DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
+        return GroupChatMessage(
+            source=self.id.type,
+            content=f"Car rented: {response}",
         )
 
     def extract_requirements(self, user_input: str) -> dict:
