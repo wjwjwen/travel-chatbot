@@ -1,15 +1,25 @@
+import asyncio
 import datetime
 import random
 from typing import Dict, List
 
 from autogen_core.base import MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     message_handler, type_subscription)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    message_handler,
+    type_subscription,
+)
 from autogen_core.components.models import LLMMessage, SystemMessage
 from typing_extensions import Annotated
 
-from ..data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
-                          HandoffMessage, TravelRequest)
+from ..data_types import (
+    AgentResponse,
+    EndUserMessage,
+    GroupChatMessage,
+    HandoffMessage,
+    TravelRequest,
+)
 from ..otlp_tracing import logger
 
 
@@ -91,7 +101,7 @@ async def simulate_car_rental_booking(
         "booking_reference": booking_reference,
     }
     # Induce an artificial delay to simulate network latency
-    # await asyncio.sleep(3)
+    await asyncio.sleep(3)
     return car_rental_details
 
 
