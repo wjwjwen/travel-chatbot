@@ -1,5 +1,5 @@
 # Intent Classifier
-from otlp_tracing import logger
+from .otlp_tracing import logger
 
 
 class IntentClassifier:
@@ -11,6 +11,7 @@ class IntentClassifier:
             "car_rental": ["car rental", "rent a car", "rental car", "car hire"],
             "activities_booking": ["activities", "tours", "sightseeing", "events"],
             "travel_plan": ["travel plan", "itinerary", "trip", "vacation", "holiday"],
+            "destination_info": ["destination", "city", "country", "place"],
             # Add more intents as needed
         }
 

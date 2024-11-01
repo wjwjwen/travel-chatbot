@@ -10,8 +10,8 @@ from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.memory.types import BaseMemory
 from pydantic import BaseModel
 
-from data_types import AgentResponse, EndUserMessage
-from otlp_tracing import logger
+from ..data_types import AgentResponse, EndUserMessage
+from ..otlp_tracing import logger
 
 
 class Resource(BaseModel):
@@ -30,11 +30,10 @@ class Message(BaseModel):
 class LlamaIndexAgent(RoutedAgent):
     def __init__(
         self,
-        description: str,
         llama_index_agent: AgentRunner,
         memory: BaseMemory | None = None,
     ) -> None:
-        super().__init__(description)
+        super().__init__("LlamaIndexAgent")
         self._llama_index_agent = llama_index_agent
         self._memory = memory
 
