@@ -57,6 +57,8 @@ The agents communicate through a messaging system, publishing and subscribing to
 
 ### Travel Agents
 
+#### Default Agent
+
 - **File**: `backend/agents/ext_agents.py`
 - **Class**: `DefaultAgent`
 - **Function**: Llama index based agent with Wikipedia Tool to help answer questions about the destination or any general information
