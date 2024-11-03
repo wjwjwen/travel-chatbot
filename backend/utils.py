@@ -8,8 +8,7 @@ from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.tools.wikipedia import WikipediaToolSpec
 
 from .agents.ext_agents import LlamaIndexAgent
-from .agents.travel_activities import (ActivitiesAgent,
-                                       get_travel_activity_tools)
+from .agents.travel_activities import ActivitiesAgent, get_travel_activity_tools
 from .agents.travel_car import CarRentalAgent
 from .agents.travel_destination import DestinationAgent
 from .agents.travel_flight import FlightAgent
@@ -32,8 +31,8 @@ tracer = configure_oltp_tracing()
 # Create AzureOpenAI model instance
 llm = AzureOpenAI(
     deployment_name=Config.AZURE_OPENAI_DEPLOYMENT_NAME,
-    temperature=0.0,
-    max_tokens=1000,
+    temperature=0.01,
+    max_tokens=2000,
     api_key=Config.AZURE_OPENAI_API_KEY,
     azure_endpoint=Config.AZURE_OPENAI_ENDPOINT,
     api_version=Config.AZURE_OPENAI_API_VERSION,
@@ -63,12 +62,9 @@ async def initialize_agent_runtime() -> SingleThreadedAgentRuntime:
     intent_classifier = IntentClassifier()
     agent_registry = AgentRegistry()
     travel_activity_tools = get_travel_activity_tools()
-    travel_activity_tool_agent_id = AgentId("activity_tool_executor_agent", "default")
     hotel_booking_tool = get_hotel_booking_tool()
-    hotel_booking_tool_agent_id = AgentId(
-        "hotel_booking_tool_executor_agent", "default"
-    )
 
+    # Register Tool Agents
     await ToolAgent.register(
         agent_runtime,
         "activity_tool_executor_agent",
@@ -76,15 +72,16 @@ async def initialize_agent_runtime() -> SingleThreadedAgentRuntime:
     )
     await ToolAgent.register(
         agent_runtime,
-        "hotel_tool_executor_agent",
+        "hotel_booking_tool_exec_agent",
         lambda: ToolAgent("Hotel tool executor agent", hotel_booking_tool),
     )
 
+    # Add subscriptions
     await agent_runtime.add_subscription(
         DefaultSubscription(topic_type="user_proxy", agent_type="user_proxy")
     )
 
-    # Register agents with the runtime
+    # Register Semantic Router Agent
     await SemanticRouterAgent.register(
         agent_runtime,
         "router",
@@ -97,12 +94,13 @@ async def initialize_agent_runtime() -> SingleThreadedAgentRuntime:
         ),
     )
 
+    # Register other agents
     await FlightAgent.register(agent_runtime, "flight_booking", lambda: FlightAgent())
     await HotelAgent.register(
         agent_runtime,
         "hotel_booking",
         lambda: HotelAgent(
-            aoai_model_client, hotel_booking_tool, hotel_booking_tool_agent_id
+            aoai_model_client, hotel_booking_tool, "hotel_booking_tool_exec_agent"
         ),
     )
     await CarRentalAgent.register(agent_runtime, "car_rental", lambda: CarRentalAgent())
@@ -110,7 +108,7 @@ async def initialize_agent_runtime() -> SingleThreadedAgentRuntime:
         agent_runtime,
         "activities_booking",
         lambda: ActivitiesAgent(
-            aoai_model_client, travel_activity_tools, travel_activity_tool_agent_id
+            aoai_model_client, travel_activity_tools, "activity_tool_executor_agent"
         ),
     )
     await DestinationAgent.register(

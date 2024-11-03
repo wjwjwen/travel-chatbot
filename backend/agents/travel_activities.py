@@ -4,10 +4,13 @@ from typing import List
 
 import aiohttp
 from autogen_core.base import AgentId, MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     message_handler, type_subscription)
-from autogen_core.components.models import (LLMMessage, SystemMessage,
-                                            UserMessage)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    message_handler,
+    type_subscription,
+)
+from autogen_core.components.models import LLMMessage, SystemMessage, UserMessage
 from autogen_core.components.tool_agent import tool_agent_caller_loop
 from autogen_core.components.tools import FunctionTool, Tool
 from autogen_ext.models import AzureOpenAIChatCompletionClient
@@ -16,8 +19,14 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from typing_extensions import Annotated
 
 from ..config import Config
-from ..data_types import (Activities, AgentResponse, EndUserMessage,
-                          GroupChatMessage, HandoffMessage, TravelRequest)
+from ..data_types import (
+    Activities,
+    AgentResponse,
+    EndUserMessage,
+    GroupChatMessage,
+    HandoffMessage,
+    TravelRequest,
+)
 from ..otlp_tracing import logger
 
 
@@ -98,7 +107,7 @@ class ActivitiesAgent(RoutedAgent):
         self,
         model_client: AzureOpenAIChatCompletionClient,
         tools: List[Tool],
-        tool_agent_id: AgentId,
+        tool_agent_type: str,
     ) -> None:
         super().__init__("ActivitiesAgent")
         self._system_messages: List[LLMMessage] = [
@@ -108,7 +117,7 @@ class ActivitiesAgent(RoutedAgent):
         ]
         self._model_client = model_client
         self._tools = tools
-        self._tool_agent_id = tool_agent_id
+        self._tool_agent_id = AgentId(tool_agent_type, self.id.key)
 
     async def _process_request(
         self, message_content: str, ctx: MessageContext

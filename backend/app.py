@@ -1,18 +1,28 @@
+import sys
+import os
+
+# Add the root directory of the project to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from typing import Dict
 
 from autogen_core.base import MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     default_subscription, message_handler)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    default_subscription,
+    message_handler,
+)
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.websockets import WebSocketState
 
-from .data_types import AgentResponse, EndUserMessage
-from .otlp_tracing import logger
-from .utils import initialize_agent_runtime
+from backend.data_types import AgentResponse, EndUserMessage
+from backend.otlp_tracing import logger
+from backend.utils import initialize_agent_runtime
 
 
 @asynccontextmanager

@@ -3,17 +3,25 @@ import random
 from typing import Dict, List
 
 from autogen_core.base import AgentId, MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     message_handler, type_subscription)
-from autogen_core.components.models import (LLMMessage, SystemMessage,
-                                            UserMessage)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    message_handler,
+    type_subscription,
+)
+from autogen_core.components.models import LLMMessage, SystemMessage, UserMessage
 from autogen_core.components.tool_agent import tool_agent_caller_loop
 from autogen_core.components.tools import FunctionTool, Tool
 from autogen_ext.models import AzureOpenAIChatCompletionClient
 from typing_extensions import Annotated
 
-from ..data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
-                          HandoffMessage, TravelRequest)
+from ..data_types import (
+    AgentResponse,
+    EndUserMessage,
+    GroupChatMessage,
+    HandoffMessage,
+    TravelRequest,
+)
 from ..otlp_tracing import logger
 
 
@@ -27,6 +35,9 @@ async def create_hotel_booking(
     ],
 ) -> Dict[str, str | int]:
     # Simulate available hotel options
+    logger.info(
+        f"Function call: Creating hotel booking for {city} from {check_in_date} to {check_out_date}"
+    )
     hotel_options = [
         {"hotel_name": "Hilton", "room_type": "Deluxe", "price_per_night": 200},
         {"hotel_name": "Marriott", "room_type": "Standard", "price_per_night": 150},
@@ -72,6 +83,7 @@ async def create_hotel_booking(
         "total_price": total_price,
         "booking_reference": booking_reference,
     }
+    logger.info(f"Hotel booking details: {hotel_booking_details}")
 
     return hotel_booking_details
 
@@ -92,17 +104,15 @@ class HotelAgent(RoutedAgent):
         self,
         model_client: AzureOpenAIChatCompletionClient,
         tools: List[Tool],
-        tool_agent_id: AgentId,
+        tool_agent_type: str,
     ) -> None:
         super().__init__("HotelAgent")
         self._system_messages: List[LLMMessage] = [
-            SystemMessage(
-                "You are a helpful AI assistant that can advise on hotel bookings based on user preferences."
-            )
+            SystemMessage("You are a helpful AI assistant that can make hotel booking.")
         ]
         self._model_client = model_client
         self._tools = tools
-        self._tool_agent_id = tool_agent_id
+        self._tool_agent_id = AgentId(tool_agent_type, self.id.key)
 
     async def _process_request(self, message_content: str, ctx: MessageContext) -> str:
         # Create a session for the activities agent
@@ -119,6 +129,7 @@ class HotelAgent(RoutedAgent):
                 tool_schema=self._tools,
                 cancellation_token=ctx.cancellation_token,
             )
+            logger.info(f"Tool agent caller loop completed: {messages}")
         except Exception as e:
             logger.error(f"Tool agent caller loop failed: {str(e)}")
             return "Failed to book hotel. Please try again."
