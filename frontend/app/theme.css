@@ -1,0 +1,26 @@
+:root {
+    --theme-font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Noto Sans, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    --theme-color-primary: 217, 71%, 51%;
+    --theme-message-bg-bot: rgba(161, 71, 154, .15);
+    --theme-message-bg-user: rgb(7, 175, 86, .15);
+    --theme-avatar-bg-user: rgb(7, 175, 86);
+    --theme-avatar-text-color-user: white;
+}
+
+
+body {
+    font-family: var(--theme-font-family);
+}
+
+.theme-message-bg-bot {
+    background-color: var(--theme-message-bg-bot);
+}
+
+.theme-message-bg-user {
+    background-color: var(--theme-message-bg-user);
+}
+
+.theme-avatar-user {
+    background-color: var(--theme-avatar-bg-user);
+    color: var(--theme-avatar-text-color-user);
+}

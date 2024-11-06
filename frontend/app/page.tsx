@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Send, MapPin, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import Icon from "@/components/ui/icon";
+import LogoImg from "@/app/assets/logo.svg";
+import BotImg from "@/app/assets/bot.svg";
 
 type Message = {
   id: number;
@@ -30,7 +29,7 @@ export default function Component() {
 
   useEffect(() => {
     const WEBSOCKET_URL =
-      process.env.NEXT_PUBLIC_WEBSOCKET_URL || "wss://echo.websocket.org";
+      process.env.NEXT_PUBLIC_WEBSOCKET_URL || "wss://travel-chatbot.grayground-1ee6f428.southeastasia.azurecontainerapps.io/chat";
     const socket = new WebSocket(WEBSOCKET_URL);
     setWs(socket);
 
@@ -127,55 +126,68 @@ export default function Component() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <Card className="w-full max-w-4xl h-[800px] bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h1 className="text-xl font-semibold">Travel Assistant</h1>
-          <Badge variant="secondary" className="bg-green-100 text-green-700">
-            Online
-          </Badge>
+    <div className="flex items-start justify-center min-h-screen">
+      <div className="overflow-hidden flex flex-col flex-1 h-screen">
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex items-center">
+            <img src={LogoImg} className="logo" alt="Travel Assistant" />
+            <h1 className="text-l pl-4 font-semibold">Travel Assistant</h1>
+          </div>
+          <Icon name="info-circle" />
         </div>
 
-        <ScrollArea className="flex-1 p-6" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.sender === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.sender === "user"
-                      ? "bg-black text-white"
-                      : "bg-gray-100 text-gray-900"
-                  }`}
-                >
-                  {message.sender === "bot" && message.content.startsWith("{")
-                    ? formatJsonResponse(message.content)
-                    : message.content}
+        <div className="space-y-4 p-4 flex-1 overflow-y-auto h-full">
+          {messages.map((message) => (
+            <React.Fragment key={message.id}>
+              {message.sender === "user" ? (
+                <div className="flex gap-2 justify-end">
+                  <div className="max-w-[80%]">
+                    <div className="rounded-lg text-sm p-4 theme-message-bg-user">
+                      {message.content}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 text-right">
+                      {new Date(message.id).toLocaleTimeString()}
+                    </div>
+                  </div>
+                  <div className="theme-avatar-user relative inline-flex items-center justify-center w-8 h-8 overflow-hidden rounded-full">
+                    <span className="font-medium">JL</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2 justify-start">
+                  <img src={BotImg} alt="Bot" className="w-8 h-8 rounded-full" />
+                  <div className="max-w-[80%]">
+                    <div className="rounded-lg text-sm p-4 theme-message-bg-bot">
+                      {message.content.startsWith("{")
+                        ? formatJsonResponse(message.content)
+                        : message.content}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {new Date(message.id).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+          {isLoading && (
+            <div className="flex gap-2 justify-start">
+              <img src={BotImg} alt="Bot" className="w-8 h-8 rounded-full" />
+              <div className="max-w-[80%]">
+                <div className="rounded-lg text-sm p-4 theme-message-bg-bot">
+                  <Icon name="loader" className="bx-spin mr-2" />
+                  Thinking...
                 </div>
               </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Thinking...</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+            </div>
+          )}
+        </div>
 
         <div className="border-t bg-gray-50/50">
-          <div className="px-6 py-4">
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-500 mb-2">
-                Sample Questions:
-              </p>
-              <div className="flex flex-wrap gap-2">
+          <div className="flex flex-row items-end gap-2 p-4">
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold mb-4">Quick Questions</h2>
+              <div className="flex flex-col gap-2">
                 {sampleQuestions.map((question, index) => (
                   <Button
                     key={index}
@@ -185,45 +197,46 @@ export default function Component() {
                     className="text-sm bg-white"
                     disabled={isLoading}
                   >
-                    <MapPin className="w-4 h-4 mr-2" />
                     {question}
                   </Button>
                 ))}
               </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendMessage(inputMessage);
+                }}
+                className="flex gap-2 mt-4"
+              >
+                <Input
+                  type="text"
+                  placeholder="Type your travel question or choose from the samples above..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  className="flex-grow bg-white"
+                  disabled={isLoading}
+                />
+              </form>
             </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                sendMessage(inputMessage);
-              }}
-              className="flex gap-2"
-            >
-              <Input
-                type="text"
-                placeholder="Type your travel question or choose from the samples above..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                className="flex-grow bg-white"
-                disabled={isLoading}
-              />
+            <div>
               <Button
                 type="submit"
-                className="bg-black text-white hover:bg-gray-800 px-6"
+                className="bg-black text-white hover:bg-gray-800"
+                size="icon"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Icon name="loader" className="bx-spin" />
                 ) : (
                   <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send
+                    <Icon name="send" size="18" />
                   </>
                 )}
               </Button>
-            </form>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
