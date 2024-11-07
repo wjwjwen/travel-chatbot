@@ -38,7 +38,7 @@ export default function Component() {
         {
           id: Date.now(),
           content:
-            "Hello! I'm your travel assistant. How can I help you plan your trip to Singapore?",
+            "Hello! I'm your AI travel agent. How can I help you plan your trip to Singapore?",
           sender: "bot",
         },
       ]);
@@ -130,10 +130,10 @@ export default function Component() {
       <div className="overflow-hidden flex flex-col flex-1 h-screen">
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center">
-            <img src={LogoImg} className="logo" alt="Travel Assistant" />
-            <h1 className="text-l pl-4 font-semibold">Travel Assistant</h1>
+            <img src={LogoImg} className="logo" alt="AI Travel Agent" />
+            <h1 className="text-l pl-4 font-semibold">AI Travel Agent</h1>
           </div>
-          <Icon name="info-circle" />
+          <Icon name="info-circle" size="20" className="text-primary" />
         </div>
 
         <div className="space-y-4 p-4 flex-1 overflow-y-auto h-full">
@@ -186,7 +186,10 @@ export default function Component() {
         <div className="border-t bg-gray-50/50">
           <div className="flex flex-row items-end gap-2 p-4">
             <div className="flex-1">
-              <h2 className="text-xl font-semibold mb-4">Quick Questions</h2>
+              <h2 className="flex items-center text-l font-semibold mb-4">
+                <Icon name="message-square-dots mr-2" />
+                Quick Questions
+              </h2>
               <div className="flex flex-col gap-2">
                 {sampleQuestions.map((question, index) => (
                   <Button
@@ -208,20 +211,28 @@ export default function Component() {
                 }}
                 className="flex gap-2 mt-4"
               >
-                <Input
-                  type="text"
-                  placeholder="Type your travel question or choose from the samples above..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  className="flex-grow bg-white"
-                  disabled={isLoading}
-                />
+
+                <div className="relative w-full">
+                  <Input
+                    type="text"
+                    placeholder="Ask me anything or select above..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    className="flex-grow bg-white"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    disabled={isLoading}
+                    className="absolute inset-y-0 end-0 text-primary"
+                  > <Icon name="microphone" size="18" /></Button>
+                </div>
               </form>
             </div>
             <div>
               <Button
                 type="submit"
-                className="bg-black text-white hover:bg-gray-800"
                 size="icon"
                 disabled={isLoading}
               >
