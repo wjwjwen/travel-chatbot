@@ -6,6 +6,7 @@ from llama_index.core.agent import ReActAgent
 from llama_index.core.memory import ChatSummaryMemoryBuffer
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.tools.wikipedia import WikipediaToolSpec
+from azure.messaging.webpubsubservice import WebPubSubServiceClient
 
 from .agents.ext_agents import LlamaIndexAgent
 from .agents.travel_activities import ActivitiesAgent, get_travel_activity_tools
@@ -39,7 +40,7 @@ llm = AzureOpenAI(
 )
 
 model_capabilities = {
-    "vision": False,
+    "vision": True,
     "function_calling": True,
     "json_output": True,
 }
@@ -136,3 +137,10 @@ async def initialize_agent_runtime() -> SingleThreadedAgentRuntime:
     logger.info("Agent runtime initialized successfully.")
 
     return agent_runtime
+
+
+def get_web_pub_client() -> WebPubSubServiceClient:
+    service = WebPubSubServiceClient.from_connection_string(
+        Config.WEB_PUB_SUB_CONNECTION_STRING, hub=Config.WEB_PUB_SUB_HUB_NAME
+    )
+    return service

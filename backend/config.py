@@ -3,8 +3,11 @@ import os
 
 from autogen_ext.models import AzureOpenAIChatCompletionClient
 from azure.cosmos.aio import CosmosClient
-from azure.identity.aio import (ClientSecretCredential, DefaultAzureCredential,
-                                get_bearer_token_provider)
+from azure.identity.aio import (
+    ClientSecretCredential,
+    DefaultAzureCredential,
+    get_bearer_token_provider,
+)
 from dotenv import load_dotenv
 
 from .otlp_tracing import logger
@@ -51,6 +54,9 @@ class Config:
 
     BING_CUSTOM_CONFIG_ID = GetRequiredConfig("BING_CUSTOM_CONFIG_ID")
     BING_CUSTOM_SEARCH_KEY = GetRequiredConfig("BING_CUSTOM_SEARCH_KEY")
+
+    WEB_PUB_SUB_CONNECTION_STRING = GetRequiredConfig("WEB_PUB_SUB_CONN_STRING")
+    WEB_PUB_SUB_HUB_NAME = GetRequiredConfig("WEB_PUB_SUB_HUB_NAME")
 
     DEV_BYPASS_AUTH = GetBoolConfig("DEV_BYPASS_AUTH")
     VISITOR_PASSWORD = GetOrGenerateVisitorPassword()

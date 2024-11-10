@@ -3,11 +3,21 @@ from collections import defaultdict
 from typing import List
 
 from autogen_core.base import AgentId, MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     message_handler, type_subscription)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    message_handler,
+    type_subscription,
+)
 
-from ..data_types import (AgentResponse, EndUserMessage, GroupChatMessage,
-                          TravelPlan, TravelRequest)
+from ..data_types import (
+    AgentStructuredResponse,
+    EndUserMessage,
+    GroupChatMessage,
+    TravelPlan,
+    TravelRequest,
+    GroupChatResponse,
+)
 from ..otlp_tracing import logger
 
 
@@ -58,6 +68,7 @@ class GroupChatManager(RoutedAgent):
         """
         logger.info(f"GroupChatManager received complex travel request: {message}")
         self._session_id = ctx.topic_id.source
+
         tasks = [
             self.send_message(
                 TravelRequest(
@@ -74,13 +85,21 @@ class GroupChatManager(RoutedAgent):
         logger.info(f"GroupChatManager received responses from agents: {group_results}")
         # Compile the final travel plan based on agent responses
         final_plan = "\n".join([response.content for response in group_results])
-        await self.publish_message(
-            AgentResponse(
-                source="GroupChatManager",
-                content=f"Here is your comprehensive travel plan:\n{final_plan}",
-            ),
-            DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
-        )
+        logger.info(f"Final travel plan: {final_plan}")
+        try:
+            await self.publish_message(
+                AgentStructuredResponse(
+                    agent_type=self.id.type,
+                    data=GroupChatResponse(
+                        source=self.id.type,
+                        content=final_plan,
+                    ),
+                    message=f"Here is your comprehensive travel plan:\n{final_plan}",
+                ),
+                DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
+            )
+        except Exception as e:
+            logger.error(f"Error publishing final travel plan: {e}")
 
     async def request_relevant_agents(self, relevant_agents: List[str]) -> None:
         """

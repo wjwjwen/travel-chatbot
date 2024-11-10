@@ -26,6 +26,7 @@ from ..data_types import (
     GroupChatMessage,
     HandoffMessage,
     TravelRequest,
+    AgentStructuredResponse,
 )
 from ..otlp_tracing import logger
 
@@ -171,9 +172,10 @@ class ActivitiesAgent(RoutedAgent):
 
         # Publish the response to the group chat manager
         await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content=activities_structured.model_dump_json(),
+            AgentStructuredResponse(
+                agent_type=self.id.type,
+                data=activities_structured,
+                message=f"Activities processed successfully for query - {message.content}",
             ),
             DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
         )

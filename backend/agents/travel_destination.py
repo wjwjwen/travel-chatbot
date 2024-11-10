@@ -2,14 +2,22 @@ import json
 from typing import List
 
 from autogen_core.base import MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     message_handler, type_subscription)
-from autogen_core.components.models import (LLMMessage, SystemMessage,
-                                            UserMessage)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    message_handler,
+    type_subscription,
+)
+from autogen_core.components.models import LLMMessage, SystemMessage, UserMessage
 from autogen_ext.models import AzureOpenAIChatCompletionClient
 
-from ..data_types import (AgentResponse, DestinationInfo, EndUserMessage,
-                          GroupChatMessage, TravelRequest)
+from ..data_types import (
+    AgentStructuredResponse,
+    DestinationInfo,
+    EndUserMessage,
+    GroupChatMessage,
+    TravelRequest,
+)
 from ..otlp_tracing import logger
 
 
@@ -33,7 +41,7 @@ class DestinationAgent(RoutedAgent):
         self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
         logger.info(
-            f"DestinationAgent received travel request: EndUserMessage{message.content}"
+            f"DestinationAgent received travel request: EndUserMessage {message.content}"
         )
         # Provide destination information
         try:
@@ -55,9 +63,10 @@ class DestinationAgent(RoutedAgent):
             pass
 
         await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content=destination_info_structured.model_dump_json(),
+            AgentStructuredResponse(
+                agent_type=self.id.type,
+                data=destination_info_structured,
+                message=message.content,
             ),
             DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
         )
