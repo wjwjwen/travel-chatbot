@@ -16,11 +16,12 @@ from autogen_ext.models import AzureOpenAIChatCompletionClient
 from typing_extensions import Annotated
 
 from ..data_types import (
-    AgentResponse,
+    AgentStructuredResponse,
     EndUserMessage,
     GroupChatMessage,
     HandoffMessage,
     TravelRequest,
+    HotelBooking,
 )
 from ..otlp_tracing import logger
 
@@ -33,7 +34,7 @@ async def create_hotel_booking(
     check_out_date: Annotated[
         str, "The check-out date of the hotel booking in the format 'YYYY-MM-DD'."
     ],
-) -> Dict[str, str | int]:
+) -> HotelBooking:
     # Simulate available hotel options
     logger.info(
         f"Function call: Creating hotel booking for {city} from {check_in_date} to {check_out_date}"
@@ -73,16 +74,16 @@ async def create_hotel_booking(
     # Create a booking reference number
     booking_reference = f"HT-{random.randint(1000, 9999)}-{city[:3].upper()}"
 
-    # Simulate hotel booking details
-    hotel_booking_details = {
-        "city": city,
-        "check_in_date": check_in_date,
-        "check_out_date": check_out_date,
-        "hotel_name": selected_hotel["hotel_name"],
-        "room_type": selected_hotel["room_type"],
-        "total_price": total_price,
-        "booking_reference": booking_reference,
-    }
+    hotel_booking_details = HotelBooking(
+        city=city,
+        check_in_date=check_in_date,
+        check_out_date=check_out_date,
+        hotel_name=selected_hotel["hotel_name"],
+        room_type=selected_hotel["room_type"],
+        total_price=total_price,
+        booking_reference=booking_reference,
+    )
+
     logger.info(f"Hotel booking details: {hotel_booking_details}")
 
     return hotel_booking_details
@@ -152,12 +153,19 @@ class HotelAgent(RoutedAgent):
             return
 
         response_content = await self._process_request(message.content, ctx)
-
+        simulated_func_call = await create_hotel_booking(
+            city="Singapore",
+            check_in_date=datetime.datetime.now().strftime("%Y-%m-%d"),
+            check_out_date=(
+                datetime.datetime.now() + datetime.timedelta(days=5)
+            ).strftime("%Y-%m-%d"),
+        )
         # Publish the response to the user proxy
         await self.publish_message(
-            AgentResponse(
-                source=self.id.type,
-                content=f"Hotel booked: {response_content}",
+            AgentStructuredResponse(
+                agent_type=self.id.type,
+                data=simulated_func_call,
+                message=f"{response_content}",
             ),
             DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
         )
@@ -174,5 +182,5 @@ class HotelAgent(RoutedAgent):
 
         return GroupChatMessage(
             source=self.id.type,
-            content=f"Hotel booked: {response_content}",
+            content=f"{response_content}",
         )

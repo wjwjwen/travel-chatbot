@@ -1,45 +1,33 @@
 from typing import List, Optional
 
 from autogen_core.base import MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     default_subscription, message_handler,
-                                     type_subscription)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    default_subscription,
+    message_handler,
+    type_subscription,
+)
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.memory.types import BaseMemory
-from pydantic import BaseModel
 
-from ..data_types import AgentResponse, EndUserMessage
+from ..data_types import AgentStructuredResponse, EndUserMessage, Resource
 from ..otlp_tracing import logger
 
 
-class Resource(BaseModel):
-    """
-    Represents a resource node retrieved during chat interactions.
+# class Message(BaseModel):
+#     """
+#     Represents a message exchanged during the chat.
 
-    Attributes:
-        content (str): The textual content of the resource.
-        node_id (str): The identifier of the node.
-        score (Optional[float]): Score representing the relevance of the resource.
-    """
+#     Attributes:
+#         content (str): The textual content of the message.
+#         sources (Optional[List[Resource]]): List of resources associated with the message.
+#     """
 
-    content: str
-    node_id: str
-    score: Optional[float] = None
-
-
-class Message(BaseModel):
-    """
-    Represents a message exchanged during the chat.
-
-    Attributes:
-        content (str): The textual content of the message.
-        sources (Optional[List[Resource]]): List of resources associated with the message.
-    """
-
-    content: str
-    sources: Optional[List[Resource]] = None
+#     content: str
+#     sources: Optional[List[Resource]] = None
 
 
 @default_subscription
@@ -116,17 +104,19 @@ class LlamaIndexAgent(RoutedAgent):
             resources.extend(tools)
             logger.info(response.response)
             await self.publish_message(
-                AgentResponse(
-                    source="LlamaIndexAgent",
-                    content=f"\n{response.response}\n",
+                AgentStructuredResponse(
+                    agent_type="default_agent",
+                    data=None,
+                    message=f"\n{response.response}\n",
                 ),
                 DefaultTopicId(type="user_proxy", source=self._session_id),
             )
         else:
             await self.publish_message(
-                AgentResponse(
-                    source="LlamaIndexAgent",
-                    content="I'm sorry, I don't have an answer for you.",
+                AgentStructuredResponse(
+                    agent_type="default_agent",
+                    data=None,
+                    message="I'm sorry, I don't have an answer for you.",
                 ),
                 DefaultTopicId(type="user_proxy", source=self._session_id),
             )

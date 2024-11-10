@@ -2,16 +2,29 @@ import json
 from collections import deque
 
 from autogen_core.base import MessageContext
-from autogen_core.components import (DefaultTopicId, RoutedAgent,
-                                     message_handler, type_subscription)
+from autogen_core.components import (
+    DefaultTopicId,
+    RoutedAgent,
+    message_handler,
+    type_subscription,
+)
 from autogen_core.components.models import SystemMessage
 from autogen_ext.models import AzureOpenAIChatCompletionClient
 
-from ..data_types import EndUserMessage, HandoffMessage, TravelPlan
+from ..data_types import (
+    EndUserMessage,
+    HandoffMessage,
+    TravelPlan,
+    AgentStructuredResponse,
+    Greeter,
+)
 from ..intent import IntentClassifier
 from ..otlp_tracing import logger
 from ..registry import AgentRegistry
 from ..session_state import SessionStateManager
+from ..registry import AgentRegistry
+
+agent_registry = AgentRegistry()
 
 
 @type_subscription(topic_type="router")
@@ -62,6 +75,20 @@ class SemanticRouterAgent(RoutedAgent):
 
         travel_plan: TravelPlan = await self._get_agents_to_route(message, history)
         logger.info(f"Routing message to agents: {travel_plan}")
+
+        if travel_plan.is_greeting:
+            logger.info("User greeting detected")
+            await self.publish_message(
+                AgentStructuredResponse(
+                    agent_type="default_agent",
+                    data=Greeter(
+                        greeting=f"Greetings, Adventurer! 🌍 Ready to embark on your next journey? I'm here to turn your travel dreams into reality. Let's dive into the details and craft an unforgettable adventure together. From flights to sights, I've got you covered. Let's get started!"
+                    ),
+                    message=f"User greeting detected: {message.content}",
+                ),
+                DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
+            )
+            return
 
         if not travel_plan.subtasks:
             logger.info("No agents selected for routing")
@@ -121,26 +148,39 @@ class SemanticRouterAgent(RoutedAgent):
             TravelPlan: A travel plan indicating which agents should handle the subtasks.
         """
         # System prompt to determine the appropriate agents to handle the message
-        system_message = f"""
-        You are an orchestration agent.
-        Your job is to decide which agents to run based on the user's request and the conversation history.
-        Below are the available agents:
+        logger.info(f"Analyzing message: {message.content}")
+        try:
+            logger.info(
+                f"Getting planner prompt for message: {message.content} and history: {[msg.content for msg in history]}"
+            )
+            system_message = agent_registry.get_planner_prompt(
+                message=message, history=history
+            )
+            logger.info(f"System message: {system_message}")
+        except Exception as e:
+            logger.error(e)
+        # system_message = f"""
+        #     You are an orchestration agent.
+        #     Your job is to decide which agents to run based on the user's request and the conversation history.
+        #     Below are the available agents:
 
-        * hotel_booking - Helps in booking hotels.
-        * activities_booking - Helps in providing activities information.
-        * flight_booking - Helps in providing flight information.
-        * car_rental - Helps in booking car rentals.
-        * group_chat_manager - Coordinates messages between agents to create a travel plan.
-        * destination_info - Provides information about a destination city.
-        * default_agent - Default agent to handle any other requests that do not match the above agents.
+        #     * hotel_booking - Helps in booking hotels. Available functions
+        #     * activities_booking - Helps in providing activities information.
+        #     * flight_booking - Helps in providing flight information.
+        #     * car_rental - Helps in booking car rentals.
+        #     * group_chat_manager - Coordinates messages between agents to create a travel plan.
+        #     * destination_info - Provides information about a destination city.
+        #     * default_agent - Handles any other requests that do not match the above agents, including greetings and general queries.
 
-        The current user message: {message.content}
-        Conversation history so far: {[msg.content for msg in history]}
+        #     The current user message: {message.content}
+        #     Conversation history so far: {[msg.content for msg in history]}
 
-        Note: You should try and address the current user message. conversation history is provided for context.
-
-        Output one or more of the agent identifiers and the sub task with details they need to act upon. Include information regarding the travel plan in the sub tasks. Do not provide any other information.
-        """
+        #     Note:
+        #     - If the user's message is a greeting or a general query, assign it to `default_agent`.
+        #     - For other requests, analyze and break down the user's message into appropriate subtasks.
+        #     - Assign each subtask to the relevant agent by setting `assigned_agent`.
+        #     - Ensure that `assigned_agent` is not blank.
+        # """
         try:
             response = await self._model_client.create(
                 [SystemMessage(system_message)],
@@ -149,6 +189,15 @@ class SemanticRouterAgent(RoutedAgent):
             my_travel_plan: TravelPlan = TravelPlan.model_validate(
                 json.loads(response.content)
             )
+            if my_travel_plan.is_greeting:
+                logger.info("User greeting detected")
+                my_travel_plan.subtasks = [
+                    {
+                        "task_details": f"Greeting - {message.content}",
+                        "assigned_agent": "default_agent",
+                    }
+                ]
+
             logger.info(f"Received travel plan: {my_travel_plan}")
             return my_travel_plan
         except Exception as e:
