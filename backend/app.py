@@ -22,7 +22,8 @@ from starlette.websockets import WebSocketState
 
 from backend.data_types import AgentResponse, EndUserMessage, AgentStructuredResponse
 from backend.otlp_tracing import logger
-from backend.utils import initialize_agent_runtime, get_web_pub_client
+from backend.utils import initialize_agent_runtime
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,9 +37,6 @@ async def lifespan(app: FastAPI):
     global web_pubsub_client
     # Initialize the agent runtime
     agent_runtime = await initialize_agent_runtime()
-
-    # Create a WebPubSubServiceClient
-    web_pubsub_client = get_web_pub_client()
 
     # Register the UserProxyAgent instance with the AgentRuntime
     await UserProxyAgent.register(agent_runtime, "user_proxy", lambda: UserProxyAgent())
