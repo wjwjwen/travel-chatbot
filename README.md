@@ -22,6 +22,10 @@ Group Chat Manager: Coordinates responses from multiple agents to provide a comp
    - **Group Chat**: The GroupChatManager coordinates between multiple agents, collects their responses, and compiles a final plan. This plan is then sent back to the user via the UserProxyAgent.
 6. **Handoff**: If an agent cannot handle the request (e.g., the request is too complex), it sends a HandoffMessage back to the SemanticRouterAgent to re-route or escalate the request. #TODO
 
+High level overview of the message flow:
+
+![High level overview of the message flow](./images/messageflow_highlevel_overview.png)
+
 ## Usage
 
 ### Running the Application
