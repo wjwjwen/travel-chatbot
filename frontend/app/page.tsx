@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Icon from "@/components/ui/icon";
 import LogoImg from "@/app/assets/logo.svg";
-import BotImg from "@/app/assets/bot.svg";
+import BotImg from "@/app/assets/bot.png";
 
 type Message = {
   id: number;
@@ -155,7 +155,7 @@ export default function Component() {
                 </div>
               ) : (
                 <div className="flex gap-2 justify-start">
-                  <img src={BotImg} alt="Bot" className="w-8 h-8 rounded-full" />
+                  <img src={BotImg.src} alt="Bot" className="w-8 h-8 rounded-full" />
                   <div className="max-w-[80%]">
                     <div className="rounded-lg text-sm p-4 theme-message-bg-bot">
                       {message.content.startsWith("{")
@@ -172,7 +172,7 @@ export default function Component() {
           ))}
           {isLoading && (
             <div className="flex gap-2 justify-start">
-              <img src={BotImg} alt="Bot" className="w-8 h-8 rounded-full" />
+              <img src={BotImg.src} alt="Bot" className="w-8 h-8 rounded-full" />
               <div className="max-w-[80%]">
                 <div className="flex items-center rounded-lg text-sm p-4 theme-message-bg-bot">
                   <Icon name="loader" className="bx-spin mr-2" />
