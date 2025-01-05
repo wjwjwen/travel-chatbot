@@ -1,7 +1,7 @@
 # config.py
 import os
 
-from autogen_ext.models import AzureOpenAIChatCompletionClient
+from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
 from azure.cosmos.aio import CosmosClient
 from azure.identity.aio import (
     ClientSecretCredential,
@@ -99,6 +99,10 @@ class Config:
         return get_bearer_token_provider(Config.GetAzureCredentials(), scopes)
 
     def GetAzureOpenAIChatCompletionClient(model_capabilities):
+        logger.info(f"Initializing Azure OpenAI client with deployment: {Config.AZURE_OPENAI_DEPLOYMENT_NAME}")
+        logger.info(f"API Version: {Config.AZURE_OPENAI_API_VERSION}")
+        logger.info(f"Model capabilities: {model_capabilities}")
+        
         if Config.__aoai_chatCompletionClient is not None:
             return Config.__aoai_chatCompletionClient
 

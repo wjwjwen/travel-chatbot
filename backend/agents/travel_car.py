@@ -2,15 +2,15 @@ import asyncio
 import datetime
 import random
 from typing import List
-from autogen_core.components.tools import FunctionTool, Tool
-from autogen_core.base import MessageContext
-from autogen_core.components import (
+from autogen_core.tools import FunctionTool, Tool
+from autogen_core import MessageContext
+from autogen_core import (
     DefaultTopicId,
     RoutedAgent,
     message_handler,
     type_subscription,
 )
-from autogen_core.components.models import LLMMessage, SystemMessage
+from autogen_core.models import LLMMessage, SystemMessage
 from typing_extensions import Annotated
 from ..data_types import (
     AgentStructuredResponse,
@@ -83,7 +83,7 @@ class CarRentalAgent(RoutedAgent):
         logger.info("CarRentalAgent initialized")
         self._system_messages: List[LLMMessage] = [
             SystemMessage(
-                "You are a helpful AI assistant that can advise on car rental bookings based on user preferences."
+                content="You are a helpful AI assistant that can advise on car rental bookings based on user preferences."
             )
         ]
 

@@ -2,17 +2,17 @@ import datetime
 import random
 from typing import Dict, List
 
-from autogen_core.base import AgentId, MessageContext
-from autogen_core.components import (
+from autogen_core import AgentId, MessageContext
+from autogen_core import (
     DefaultTopicId,
     RoutedAgent,
     message_handler,
     type_subscription,
 )
-from autogen_core.components.models import LLMMessage, SystemMessage, UserMessage
-from autogen_core.components.tool_agent import tool_agent_caller_loop
-from autogen_core.components.tools import FunctionTool, Tool
-from autogen_ext.models import AzureOpenAIChatCompletionClient
+from autogen_core.models import LLMMessage, SystemMessage, UserMessage
+from autogen_core.tool_agent import tool_agent_caller_loop
+from autogen_core.tools import FunctionTool, Tool
+from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
 from typing_extensions import Annotated
 
 from ..data_types import (
@@ -96,7 +96,7 @@ class HotelAgent(RoutedAgent):
     ) -> None:
         super().__init__("HotelAgent")
         self._system_messages: List[LLMMessage] = [
-            SystemMessage("You are a helpful AI assistant that can make hotel booking.")
+            SystemMessage(content="You are a helpful AI assistant that can make hotel booking.")
         ]
         self._model_client = model_client
         self._tools = tools

@@ -3,17 +3,17 @@ import json
 from typing import List
 
 import aiohttp
-from autogen_core.base import AgentId, MessageContext
-from autogen_core.components import (
+from autogen_core import AgentId, MessageContext
+from autogen_core import (
     DefaultTopicId,
     RoutedAgent,
     message_handler,
     type_subscription,
 )
-from autogen_core.components.models import LLMMessage, SystemMessage, UserMessage
-from autogen_core.components.tool_agent import tool_agent_caller_loop
-from autogen_core.components.tools import FunctionTool, Tool
-from autogen_ext.models import AzureOpenAIChatCompletionClient
+from autogen_core.models import LLMMessage, SystemMessage, UserMessage
+from autogen_core.tool_agent import tool_agent_caller_loop
+from autogen_core.tools import FunctionTool, Tool
+from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from typing_extensions import Annotated
@@ -112,7 +112,7 @@ class ActivitiesAgent(RoutedAgent):
         super().__init__("ActivitiesAgent")
         self._system_messages: List[LLMMessage] = [
             SystemMessage(
-                "You are a helpful AI assistant that can advise on activities."
+                content="You are a helpful AI assistant that can advise on activities."
             )
         ]
         self._model_client = model_client

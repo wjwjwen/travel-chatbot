@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 from datetime import date
 
 # Improvements and suggestions:
@@ -148,8 +148,11 @@ class TravelSubTask(BaseModel):
 
 class TravelPlan(BaseModel):
     main_task: str
-    subtasks: List[TravelSubTask]
-    is_greeting: bool
+    subtasks: List[Dict[str, str]] = []  # 使用 Dict 而不是 TravelSubTask
+    is_greeting: bool = False
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 # Generic Response Wrapper

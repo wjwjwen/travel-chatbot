@@ -9,8 +9,8 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Dict, Union
 
-from autogen_core.base import MessageContext
-from autogen_core.components import (
+from autogen_core import MessageContext
+from autogen_core import (
     DefaultTopicId,
     RoutedAgent,
     default_subscription,

@@ -1,15 +1,15 @@
 import random
 from typing import Dict, List
 
-from autogen_core.base import MessageContext
-from autogen_core.components import (
+from autogen_core import MessageContext
+from autogen_core import (
     DefaultTopicId,
     RoutedAgent,
     message_handler,
     type_subscription,
 )
 from typing_extensions import Annotated
-from autogen_core.components.tools import FunctionTool, Tool
+from autogen_core.tools import FunctionTool, Tool
 
 from ..data_types import (
     AgentResponse,
@@ -83,32 +83,44 @@ class FlightAgent(RoutedAgent):
     async def handle_message(
         self, message: EndUserMessage, ctx: MessageContext
     ) -> None:
-        logger.info(f"FlightAgent received message: {message.content}")
-        if "travel plan" in message.content.lower():
-            await self.publish_message(
-                HandoffMessage(content=message.content, source=self.id.type),
-                DefaultTopicId(type="router", source=ctx.topic_id.source),
-            )
-            return
+        try:
+            if "travel plan" in message.content.lower():
+                await self.publish_message(
+                    HandoffMessage(content=message.content, source=self.id.type),
+                    DefaultTopicId(type="router", source=ctx.topic_id.source),
+                )
+                return
 
-        response = await simulate_flight_booking()
-        await self.publish_message(
-            AgentStructuredResponse(
+            response = await simulate_flight_booking()
+            structured_response = AgentStructuredResponse(
                 agent_type=self.id.type,
                 data=response,
                 message=f"Simulated response: Flight booking processed successfully for query - {message.content}",
-            ),
-            DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
-        )
+            )
+            
+            target_topic = DefaultTopicId(type="user_proxy", source=ctx.topic_id.source)
+            await self.publish_message(structured_response, target_topic)
+            
+        except Exception as e:
+            logger.error("Error in FlightAgent.handle_message")
+            logger.error(f"Error type: {type(e)}")
+            logger.error(f"Error message: {str(e)}")
+            logger.error("Error details:", exc_info=True)
 
     @message_handler
     async def handle_travel_request(
         self, message: TravelRequest, ctx: MessageContext
     ) -> GroupChatMessage:
-        logger.info(f"FlightAgent received travel request sub-task: {message.content}")
-
-        response = await simulate_flight_booking()
-        return GroupChatMessage(
-            source=self.id.type,
-            content=f"Flight booking processed: {response}",
-        )
+        try:
+            response = await simulate_flight_booking()
+            return GroupChatMessage(
+                source=self.id.type,
+                content=f"Flight booking processed: {response}",
+            )
+            
+        except Exception as e:
+            logger.error("Error in FlightAgent.handle_travel_request")
+            logger.error(f"Error type: {type(e)}")
+            logger.error(f"Error message: {str(e)}")
+            logger.error("Error details:", exc_info=True)
+            raise

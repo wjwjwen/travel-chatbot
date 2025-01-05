@@ -2,8 +2,8 @@ import asyncio
 from collections import defaultdict
 from typing import List
 
-from autogen_core.base import AgentId, MessageContext
-from autogen_core.components import (
+from autogen_core import AgentId, MessageContext
+from autogen_core import (
     DefaultTopicId,
     RoutedAgent,
     message_handler,
@@ -51,7 +51,6 @@ class GroupChatManager(RoutedAgent):
             message (EndUserMessage): The incoming user message.
             ctx (MessageContext): The context of the current message.
         """
-        logger.info(f"GroupChatManager received travel request: {message.content}")
         self._session_id = ctx.topic_id.source
         await self.request_relevant_agents(ctx.topic_id.type)
 
@@ -66,36 +65,41 @@ class GroupChatManager(RoutedAgent):
             message (TravelPlan): The incoming travel plan request containing multiple tasks.
             ctx (MessageContext): The context of the current message.
         """
-        logger.info(f"GroupChatManager received complex travel request: {message}")
-        self._session_id = ctx.topic_id.source
-
-        tasks = [
-            self.send_message(
-                TravelRequest(
-                    source="GroupChatManager",
-                    content=task.task_details,
-                    original_task=message.main_task,
-                ),
-                AgentId(type=task.assigned_agent, key=self._session_id),
-            )
-            for task in message.subtasks
-        ]
         try:
+            self._session_id = ctx.topic_id.source
+            tasks = []
+            
+            for task in message.subtasks:
+                try:
+                    if isinstance(task, dict):
+                        task_details = task.get('task_details')
+                        assigned_agent = task.get('assigned_agent')
+                    else:
+                        task_details = task.task_details
+                        assigned_agent = task.assigned_agent
+                        
+                    travel_request = TravelRequest(
+                        source="GroupChatManager",
+                        content=task_details,
+                        original_task=message.main_task,
+                    )
+                    agent_id = AgentId(type=assigned_agent, key=self._session_id)
+                    
+                    tasks.append(
+                        self.send_message(travel_request, agent_id)
+                    )
+                    
+                except Exception as e:
+                    logger.error(f"Error creating task")
+                    logger.error(f"Task data: {task}")
+                    logger.error(f"Error type: {type(e)}")
+                    logger.error(f"Error message: {str(e)}")
+                    logger.error("Error details:", exc_info=True)
+                    continue
+
             group_results: List[GroupChatMessage] = await asyncio.gather(*tasks)
-            logger.info("-" * 50)
-            logger.info(
-                f"GroupChatManager received responses from agents: {group_results}"
-            )
-            logger.info("-" * 50)
-        except Exception as e:
-            logger.error(f"Error sending messages to agents: {e}")
-            return
+            final_plan = "\n".join([response.content for response in group_results])
 
-        logger.info(f"GroupChatManager received responses from agents: {group_results}")
-        # Compile the final travel plan based on agent responses
-        final_plan = "\n".join([response.content for response in group_results])
-        logger.info(f"Final travel plan: {final_plan}")
-        try:
             await self.publish_message(
                 AgentStructuredResponse(
                     agent_type=self.id.type,
@@ -107,8 +111,12 @@ class GroupChatManager(RoutedAgent):
                 ),
                 DefaultTopicId(type="user_proxy", source=ctx.topic_id.source),
             )
+            
         except Exception as e:
-            logger.error(f"Error publishing final travel plan: {e}")
+            logger.error("Error in handle_complex_travel_request")
+            logger.error(f"Error type: {type(e)}")
+            logger.error(f"Error message: {str(e)}")
+            logger.error("Error details:", exc_info=True)
 
     async def request_relevant_agents(self, relevant_agents: List[str]) -> None:
         """
@@ -117,9 +125,6 @@ class GroupChatManager(RoutedAgent):
         Args:
             relevant_agents (List[str]): The list of agent types involved in the travel plan.
         """
-        logger.info(
-            "GroupChatManager requesting relevant agents to provide details for the travel plan"
-        )
         for agent_type in relevant_agents:
             await self.publish_message(
                 TravelRequest(
@@ -140,12 +145,8 @@ class GroupChatManager(RoutedAgent):
             ctx (MessageContext): Context information for the message.
         """
         session_id = ctx.topic_id.source
-        logger.info(f"Received handoff message from {message.source}")
-
         if message.original_task and "complete" in message.content.lower():
             self._conversation_complete = True
-            logger.info("Conversation completed. Clearing session.")
-            # Add cleanup or finalization logic here if needed.
         else:
             await self.compile_final_plan()
 
@@ -153,11 +154,9 @@ class GroupChatManager(RoutedAgent):
         """
         Compiles the final travel plan based on collected responses from agents.
         """
-        logger.info("Compiling final travel plan from collected responses.")
         final_plan = "\n".join(
             response.content for response in self._responses[self._session_id]
         )
-        logger.info(f"Compiled Final Travel Plan: {final_plan}")
         await self.publish_message(
             AgentStructuredResponse(
                 agent_type=self.id.type,
